@@ -70,7 +70,7 @@ const Navbar = () => {
           setIsOpen(false);
         }, 700);
       }}
-      class="w-[2.5rem] h-[2.5rem] text-slate-800 border-2 border-slate-800 rounded-full fixed right-7 top-6"
+      class="w-[2.5rem] h-[2.5rem] text-slate-800 border-2 border-slate-800 rounded-full fixed right-7 top-7"
     />
   ) : (
     <RxTextAlignJustify
@@ -79,7 +79,7 @@ const Navbar = () => {
         setIsOpen(true);
         setClickedTransition(!clickedTransition);
       }}
-      class="w-[2.5rem] h-[2.5rem] text-white animate-pulse border-2 border-white rounded-full fixed right-7 top-6"
+      class="w-[2.5rem] h-[2.5rem] text-white animate-pulse border-2 border-white rounded-full fixed right-7 top-7"
     />
   );
 

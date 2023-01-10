@@ -14,15 +14,16 @@ import {
 } from 'react-query';
 import 'animate.css';
 import '../styles/global.css';
-import { useRef } from 'react';
+import { useRef, useEffect } from 'react';
 
 require('../styles/style.css');
 
-if (typeof window !== 'undefined') {
-  require('flowbite/dist/flowbite.js');
-}
-
 const MyApp = ({ Component, pageProps }: AppProps) => {
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      require('flowbite/dist/flowbite.js');
+    }
+  });
   const router = useRouter();
   const queryClient = new QueryClient();
 
