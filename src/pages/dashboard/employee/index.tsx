@@ -1,78 +1,112 @@
+/* eslint-disable import/extensions */
 /* eslint-disable unused-imports/no-unused-vars */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import type { NextPage } from 'next';
 import { CgDetailsMore } from 'react-icons/cg';
 import { RiEditCircleLine } from 'react-icons/ri';
+import useSWR from 'swr';
 
 import { Meta } from '../../../layout/Meta';
+import axios from '../../../lib/axios';
 import { MainDashboard } from '../../../templates/mainDashboard';
 import { AppConfig } from '../../../utils/AppConfig';
 
 const Index: NextPage = () => {
+  const [token, setToken] = useState();
   const [modal, setModal] = useState(false);
+  const [modalCreate, setModalCreate] = useState(false);
   const [modalImg, setModalImg] = useState(false);
   const [modalProfile, setModalProfile] = useState(false);
+  const [employee, setEmployee] = useState([]);
+  const [id, setId] = useState();
+
+  const [nik, setNik] = useState();
+  const [namaLengkap, setNamaLengkap] = useState();
+  const [tempatLahir, setTempatLahir] = useState();
+  const [tglLahir, setTglLahir] = useState();
+  const [jenisKelamin, setJenisKelamin] = useState('Laki-laki');
+  const [alamat, setAlamat] = useState();
+  const [agama, setAgama] = useState('Islam');
+  const [status, setStatus] = useState();
+  const [noHp, setNoHp] = useState();
+  const [email, setEmail] = useState();
+  const [jabatanPegawai, setJabatanPegawai] = useState();
+  const [statusPegawai, setStatusPegawai] = useState();
+
+  const fetcher = (url) => axios.get(url).then((res) => res.data);
+  const { data: karyawan, error } = useSWR(`api/karyawan`, fetcher);
+  const { data: dataStatus } = useSWR(`api/status`, fetcher);
+  const { data: jabatan } = useSWR(`api/jabatan`, fetcher);
+  const empy = karyawan?.data;
+  const jbtn = jabatan?.data;
+  const sts = dataStatus?.data;
+
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState(empy);
+
+  const formCreate = new FormData();
+  formCreate.append('nik', nik);
+  formCreate.append('nama_pegawai', namaLengkap);
+  formCreate.append('tempat_lahir', tempatLahir);
+  formCreate.append('tanggal_lahir', tglLahir);
+  formCreate.append('jenis_kelamin', jenisKelamin);
+  formCreate.append('alamat', alamat);
+  formCreate.append('agama', agama);
+  formCreate.append('status_hubungan', status);
+  formCreate.append('no_telp', noHp);
+  formCreate.append('email', email);
+  formCreate.append('jabatanPegawai', jabatanPegawai);
+  formCreate.append('statusPegawai', statusPegawai);
+
+  const csrf = () =>
+    axios.get('/sanctum/csrf-cookie').then((res) => {
+      setToken(res);
+    });
+
+  useEffect(() => {
+    csrf();
+  }, []);
+
+  const createEmployee = async () => {
+    const csrfToken = await csrf();
+    axios
+      .post('api/karyawan', formCreate, {
+        headers: {
+          'X-CSRF-TOKEN': csrfToken,
+          'Content-Type': 'application/json',
+        },
+      })
+      .then((res) => {
+        console.log(res);
+        setModalCreate(false);
+      })
+      .catch((err) => {
+        console.log(err);
+      });
+  };
+
+  const handleSearch = (e) => {
+    setSearch(e.target.value);
+    const filtered = empy?.filter((item) => {
+      return item.nama.toLowerCase().includes(e.target.value.toLowerCase());
+    });
+    setFilter(filtered);
+  };
+
+  const dataForm = new FormData();
+  dataForm.append('namaLengkap', namaLengkap);
+  dataForm.append('tempatLahir', tempatLahir);
+  dataForm.append('tglLahir', tglLahir);
+  dataForm.append('jenisKelamin', jenisKelamin);
+  dataForm.append('alamat', alamat);
+  dataForm.append('agama', agama);
+  dataForm.append('status', status);
+  dataForm.append('noHp', noHp);
 
   const modalElement = () => {
-    const dataKaryawan = [
-      {
-        id: 1,
-        label: 'Nama Lengkap',
-        value: 'Herdyansah',
-      },
-      {
-        id: 2,
-        label: 'Tempat/Tgl Lahir',
-        value: 'Jakarta, 16-08-2004',
-      },
-      {
-        id: 3,
+    const data = empy?.filter((item) => item.id === id);
 
-        label: 'Jenis Kelamin',
-        value: 'Laki-laki',
-      },
-      {
-        id: 4,
-        label: 'Alamat ',
-        value: 'KP. LEUWIDULANG, RT. 03, RW. 02',
-      },
-      {
-        id: 5,
-        label: 'Agama',
-        value: 'Islam',
-      },
-      {
-        id: 6,
-        label: 'Status',
-        value: 'Belum Menikah',
-      },
-      {
-        id: 7,
-        label: 'No. HP',
-        value: '0812-3456-7890',
-      },
-      {
-        id: 8,
-        label: 'Email',
-        value: 'johndoe@gmail.com',
-      },
-      {
-        id: 9,
-        label: 'Status Pegawai',
-        value: 'Tetap',
-      },
-      {
-        id: 10,
-        label: 'Nama Bank',
-        value: 'Bank Mandiri',
-      },
-      {
-        id: 11,
-        label: 'No. Rekening',
-        value: '1234567890',
-      },
-    ];
     const modalUpdateImage = () => {
       return (
         <div class="fixed top-5 right-5 z-[51] w-full h-full max-w-sm max-h-[20rem] bg-white rounded-lg shadow-md">
@@ -125,39 +159,39 @@ const Index: NextPage = () => {
                 <div class="grid gap-4 mb-4 sm:grid-cols-2">
                   <div>
                     <label
-                      for="name"
+                      for="namaLengkap"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Nama Lengkap
                     </label>
                     <input
+                      onChange={(e) => setNamaLengkap(e.target.value)}
+                      id="namaLengkap"
                       type="text"
-                      name="name"
-                      id="name"
-                      value="iPad Air Gen 5th Wi-Fi"
+                      value={namaLengkap}
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple iMac 27&ldquo;"
+                      placeholder={namaLengkap}
                     />
                   </div>
                   <div>
                     <label
-                      for="brand"
+                      for="tempatLahir"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Tempat Lahir
                     </label>
                     <input
+                      onChange={(e) => setTempatLahir(e.target.value)}
+                      id="tempatLahir"
                       type="text"
-                      name="brand"
-                      id="brand"
-                      value="Google"
+                      value={tempatLahir}
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple"
+                      placeholder={tempatLahir}
                     />
                   </div>
                   <div>
                     <label
-                      for="price"
+                      for="tanggalLahir"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Tanggal Lahir
@@ -180,56 +214,62 @@ const Index: NextPage = () => {
                         </svg>
                       </div>
                       <input
-                        id="datepickerId"
+                        onChange={(e) => setTglLahir(e.target.value)}
+                        value={tglLahir}
+                        id="tanggalLahir"
                         type="date"
                         class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
-                        placeholder="Select date"
+                        placeholder={tglLahir}
                       />
                     </div>
                   </div>
                   <div>
                     <label
-                      for="category"
+                      for="jenisKelamin"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Jenis Kelamin
                     </label>
                     <select
-                      id="category"
+                      onChange={(e) => setJenisKelamin(e.target.value)}
+                      value={jenisKelamin}
+                      id="jenisKelamin"
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     >
-                      <option selected="">Laki-laki</option>
-                      <option value="TV">Perempuan</option>
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
                     </select>
                   </div>
                   <div>
                     <label
-                      for="brand"
+                      for="alamatLengkap"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Alamat Lengkap
                     </label>
                     <input
+                      onChange={(e) => setAlamat(e.target.value)}
+                      value={alamat}
                       type="text"
-                      name="brand"
-                      id="brand"
-                      value="Google"
+                      id="alamatLengkap"
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple"
+                      placeholder={alamat}
                     />
                   </div>
                   <div>
                     <label
-                      for="category"
+                      for="agama"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Agama
                     </label>
                     <select
-                      id="category"
+                      onChange={(e) => setAgama(e.target.value)}
+                      value={agama}
+                      id="agama"
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     >
-                      <option selected="">Islam</option>
+                      <option value="Islam">Islam</option>
                       <option value="Kristen">Kristen</option>
                       <option value="Hindu">Hindu</option>
                       <option value="Budha">Budha</option>
@@ -238,49 +278,35 @@ const Index: NextPage = () => {
                   </div>
                   <div>
                     <label
-                      for="category"
+                      for="statusPerkawinan"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       Status Perkawinan
                     </label>
                     <select
-                      id="category"
+                      onChange={(e) => setStatus(e.target.value)}
+                      value={status}
+                      id="statusPerkawinan"
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
                     >
-                      <option selected="">Belum Kawin</option>
-                      <option value="TV">Kawin</option>
+                      <option value="Belum Kawin">Belum Kawin</option>
+                      <option value="Kawin">Kawin</option>
                     </select>
                   </div>
                   <div>
                     <label
-                      for="brand"
+                      for="noHp"
                       class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
                     >
                       No HP
                     </label>
                     <input
+                      onChange={(e) => setNoHp(e.target.value)}
+                      value={noHp}
                       type="number"
-                      name="brand"
-                      id="brand"
-                      value="Google"
+                      id="noHp"
                       class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple"
-                    />
-                  </div>
-                  <div>
-                    <label
-                      for="brand"
-                      class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
-                    >
-                      Email
-                    </label>
-                    <input
-                      type="email"
-                      name="brand"
-                      id="brand"
-                      value="Google"
-                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
-                      placeholder="Ex. Apple"
+                      placeholder={noHp}
                     />
                   </div>
                 </div>
@@ -290,7 +316,7 @@ const Index: NextPage = () => {
                     type="submit"
                     class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
                   >
-                    Update product
+                    Perbarui Data
                   </button>
                   <button
                     onClick={() => setModalProfile(false)}
@@ -309,7 +335,7 @@ const Index: NextPage = () => {
                         clip-rule="evenodd"
                       ></path>
                     </svg>
-                    Delete
+                    Batal
                   </button>
                 </div>
               </form>
@@ -330,7 +356,10 @@ const Index: NextPage = () => {
                   Detail Karyawan
                 </h3>
                 <button
-                  onClick={() => setModal(false)}
+                  onClick={() => {
+                    setId('');
+                    setModal(false);
+                  }}
                   type="button"
                   class="text-gray-400 bg-transparent hover:bg-gray-200 hover:text-gray-900 rounded-lg text-sm p-1.5 ml-auto inline-flex items-center dark:hover:bg-gray-600 dark:hover:text-white"
                 >
@@ -369,28 +398,109 @@ const Index: NextPage = () => {
                     />
                     <div class="flex flex-col">
                       <h1 class="text-xl font-semibold text-gray-900 dark:text-white uppercase">
-                        Herdyansah
+                        {data[0].nama}
                       </h1>
                       <span class="text-base font-medium text-gray-500 dark:text-gray-400">
-                        Manager
+                        {data[0].jabatan.jabatan_pegawai}
                       </span>
                     </div>
                   </div>
                   {/* full data */}
                   <div class="w-full mt-5 overflow-hidden rounded-lg shadow-xs">
-                    {dataKaryawan.map((item) => (
-                      <div
-                        key={item.id}
-                        class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto"
-                      >
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Nama Lengkap
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].nama}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Tempat/Tgl Lahir
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].tempat_lahir}, {data[0].tanggal_lahir}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Jenis Kelamin
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].jenis_kelamin}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Alamat
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].alamat}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Agama
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].agama}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Status
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].status_hubungan}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        No. HP
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].no_telp}
+                      </span>
+                    </div>
+                    <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                      <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                        Status Pegawai
+                      </span>
+                      <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                        {data[0].status_pegawai}
+                      </span>
+                    </div>
+                    <div class="border-2 bg-slate-800 m-3 rounded-md"></div>
+                    {data[0].nama_bank === 'CASH' ? (
+                      <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
                         <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
-                          {item.label}
+                          Jenis Pembayaran
                         </span>
                         <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
-                          {item.value}
+                          {data[0].nama_bank}
                         </span>
                       </div>
-                    ))}
+                    ) : (
+                      <>
+                        <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                          <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                            Nama Bank
+                          </span>
+                          <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                            {data[0].nama_bank}
+                          </span>
+                        </div>
+                        <div class="flex flex-row items-center justify-between max-w-xl space-y-2 mx-auto">
+                          <span class="text-sm font-bold text-gray-500 dark:text-gray-400">
+                            No Rekening
+                          </span>
+                          <span class="text-xs font-semibold text-white p-2 uppercase bg-gray-500 rounded-[7px]">
+                            {data[0].no_rekening}
+                          </span>
+                        </div>
+                      </>
+                    )}
                   </div>
                   {/* end full data */}
                 </div>
@@ -424,6 +534,279 @@ const Index: NextPage = () => {
     );
   };
 
+  const modalCreateData = () => {
+    return (
+      <div class="absolute top-36 md:top-28 right-5 z-[1] md:z-[51] w-full md:max-w-xl max-w-xs max-h-[30rem] bg-white rounded-lg shadow-md py-5 overflow-y-scroll">
+        <div class="flex flex-col items-center justify-center w-full h-full space-y-4 overflow-y-scroll">
+          <div class="flex flex-col items-center justify-center">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                createEmployee();
+              }}
+            >
+              <div class="grid gap-4 mb-4 sm:grid-cols-2">
+                <div>
+                  <label
+                    for="namaLengkap"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Nama Lengkap
+                  </label>
+                  <input
+                    onChange={(e) => setNamaLengkap(e.target.value)}
+                    id="namaLengkap"
+                    type="text"
+                    value={namaLengkap}
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder={namaLengkap}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="nik"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    NIK KTP
+                  </label>
+                  <input
+                    onChange={(e) => setNik(e.target.value)}
+                    id="nik"
+                    type="text"
+                    value={nik}
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder={nik}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="tempatLahir"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Tempat Lahir
+                  </label>
+                  <input
+                    onChange={(e) => setTempatLahir(e.target.value)}
+                    id="tempatLahir"
+                    type="text"
+                    value={tempatLahir}
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder={tempatLahir}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="tanggalLahir"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Tanggal Lahir
+                  </label>
+
+                  <div class="relative">
+                    <div class="flex absolute inset-y-0 left-0 items-center pl-3 pointer-events-none">
+                      <svg
+                        aria-hidden="true"
+                        class="w-5 h-5 text-gray-500 dark:text-gray-400"
+                        fill="currentColor"
+                        viewBox="0 0 20 20"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          fill-rule="evenodd"
+                          d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                          clip-rule="evenodd"
+                        ></path>
+                      </svg>
+                    </div>
+                    <input
+                      onChange={(e) => setTglLahir(e.target.value)}
+                      value={tglLahir}
+                      id="tanggalLahir"
+                      type="date"
+                      class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
+                      placeholder={tglLahir}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label
+                    for="jenisKelamin"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Jenis Kelamin
+                  </label>
+                  <select
+                    onChange={(e) => setJenisKelamin(e.target.value)}
+                    value={jenisKelamin}
+                    id="jenisKelamin"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  >
+                    <option value="Laki-laki">Laki-laki</option>
+                    <option value="Perempuan">Perempuan</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    for="alamatLengkap"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Alamat Lengkap
+                  </label>
+                  <input
+                    onChange={(e) => setAlamat(e.target.value)}
+                    value={alamat}
+                    type="text"
+                    id="alamatLengkap"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder={alamat}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="agama"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Agama
+                  </label>
+                  <select
+                    onChange={(e) => setAgama(e.target.value)}
+                    value={agama}
+                    id="agama"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  >
+                    <option value="Islam">Islam</option>
+                    <option value="Kristen">Kristen</option>
+                    <option value="Hindu">Hindu</option>
+                    <option value="Budha">Budha</option>
+                    <option value="Konghucu">Konghucu</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    for="statusPerkawinan"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Status Perkawinan
+                  </label>
+                  <select
+                    onChange={(e) => setStatus(e.target.value)}
+                    value={status}
+                    id="statusPerkawinan"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  >
+                    <option value="Belum Kawin">Belum Kawin</option>
+                    <option value="Kawin">Kawin</option>
+                  </select>
+                </div>
+                <div>
+                  <label
+                    for="noHp"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    No HP
+                  </label>
+                  <input
+                    onChange={(e) => setNoHp(e.target.value)}
+                    value={noHp}
+                    type="number"
+                    id="noHp"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder={noHp}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="email"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Email
+                  </label>
+                  <input
+                    onChange={(e) => setEmail(e.target.value)}
+                    value={email}
+                    type="email"
+                    id="email"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-600 focus:border-primary-600 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                    placeholder={email}
+                  />
+                </div>
+                <div>
+                  <label
+                    for="jabatan"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Jabatan
+                  </label>
+                  <select
+                    onChange={(e) => setJabatanPegawai(e.target.value)}
+                    value={jabatanPegawai}
+                    id="jabatan"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  >
+                    {jbtn &&
+                      jbtn.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.jabatan_pegawai}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label
+                    for="status"
+                    class="block mb-2 text-sm font-medium text-gray-900 dark:text-white"
+                  >
+                    Status Pegawai
+                  </label>
+                  <select
+                    onChange={(e) => setStatusPegawai(e.target.value)}
+                    value={statusPegawai}
+                    id="status"
+                    class="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-primary-500 focus:border-primary-500 block w-full p-2.5 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-primary-500 dark:focus:border-primary-500"
+                  >
+                    {sts &&
+                      sts.map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.status_pegawai}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+              <div class="flex items-center space-x-4">
+                <button
+                  type="submit"
+                  class="text-white bg-primary-700 hover:bg-primary-800 focus:ring-4 focus:outline-none focus:ring-primary-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:bg-primary-600 dark:hover:bg-primary-700 dark:focus:ring-primary-800"
+                >
+                  Tambah Data
+                </button>
+                <button
+                  onClick={() => setModalCreate(false)}
+                  type="button"
+                  class="text-red-600 inline-flex items-center hover:text-white border border-red-600 hover:bg-red-600 focus:ring-4 focus:outline-none focus:ring-red-300 font-medium rounded-lg text-sm px-5 py-2.5 text-center dark:border-red-500 dark:text-red-500 dark:hover:text-white dark:hover:bg-red-600 dark:focus:ring-red-900"
+                >
+                  <svg
+                    class="mr-1 -ml-1 w-5 h-5"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                      clip-rule="evenodd"
+                    ></path>
+                  </svg>
+                  Batal
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <MainDashboard>
       <Meta
@@ -435,10 +818,11 @@ const Index: NextPage = () => {
           height: '13.5vh',
           width: '98vw',
         }}
-        class="w-full mx-auto mt-2 rounded-md border-2 border-slate-800"
+        class="w-full mx-auto mt-2 rounded-md border-2 border-slate-800 bg-slate-100"
       ></div>
 
       {modal ? modalElement() : null}
+      {modalCreate ? modalCreateData() : null}
 
       <div
         id="section-1"
@@ -487,28 +871,16 @@ const Index: NextPage = () => {
                     aria-labelledby="dropdownActionButton"
                   >
                     <li>
-                      <a
-                        href="#"
+                      <span
+                        onClick={() => {
+                          setTimeout(() => {
+                            setModalCreate(true);
+                          }, 200);
+                        }}
                         class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
                       >
-                        Reward
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                      >
-                        Promote
-                      </a>
-                    </li>
-                    <li>
-                      <a
-                        href="#"
-                        class="block px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600 dark:hover:text-white"
-                      >
-                        Activate account
-                      </a>
+                        Tambah Data
+                      </span>
                     </li>
                   </ul>
                   <div class="py-1">
@@ -516,7 +888,7 @@ const Index: NextPage = () => {
                       href="#"
                       class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 dark:text-gray-200 dark:hover:text-white"
                     >
-                      Delete User
+                      Hapus Semua Data
                     </a>
                   </div>
                 </div>
@@ -541,6 +913,7 @@ const Index: NextPage = () => {
                   </svg>
                 </div>
                 <input
+                  onChange={handleSearch}
                   type="text"
                   id="table-search-users"
                   class="block p-2 pl-10 text-sm text-gray-900 border border-gray-300 rounded-lg w-80 bg-gray-50 focus:ring-blue-500 focus:border-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:placeholder-gray-400 dark:text-white dark:focus:ring-blue-500 dark:focus:border-blue-500"
@@ -555,7 +928,7 @@ const Index: NextPage = () => {
                     Name
                   </th>
                   <th scope="col" class="px-6 py-3">
-                    Position
+                    Lama Kerja
                   </th>
                   <th scope="col" class="px-6 py-3">
                     Status
@@ -566,42 +939,121 @@ const Index: NextPage = () => {
                 </tr>
               </thead>
               <tbody>
-                <tr class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600">
-                  <th
-                    scope="row"
-                    class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
-                  >
-                    <img
-                      class="w-10 h-10 rounded-full bg-slate-900"
-                      src="/docs/images/people/profile-picture-1.jpg"
-                      alt=""
-                    />
-                    <div class="pl-3">
-                      <div class="text-base font-semibold">Neil Sims</div>
-                      <div class="font-normal text-gray-500">
-                        neil.sims@flowbite.com
+                {search
+                  ? filter?.map((emp) => (
+                      <tr
+                        key={emp.id}
+                        class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        <th
+                          scope="row"
+                          class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
+                        >
+                          <img
+                            class="w-10 h-10 rounded-full bg-slate-900"
+                            src="/docs/images/people/profile-picture-1.jpg"
+                            alt=""
+                          />
+                          <div class="pl-3">
+                            <div class="text-base font-semibold">
+                              {emp?.nama}
+                            </div>
+                            <div class="font-normal text-gray-500">
+                              {emp?.jabatan.jabatan_pegawai}
+                            </div>
+                          </div>
+                        </th>
+                        <td class="px-6 py-4">{emp?.lama_kerja}</td>
+                        <td class="px-6 py-4">
+                          {emp?.status_pegawai === 'Aktif' ? (
+                            <div class="flex items-center">
+                              <div class="h-2.5 w-2.5 rounded-full bg-green-400 mr-2"></div>{' '}
+                              {emp?.status_pegawai}
+                            </div>
+                          ) : (
+                            <div class="flex items-center">
+                              <div class="h-2.5 w-2.5 rounded-full bg-red-400 mr-2"></div>{' '}
+                              {emp?.status_pegawai}
+                            </div>
+                          )}
+                        </td>
+                        <td class="px-6 py-4">
+                          <button
+                            onClick={() => {
+                              setId(emp?.id);
+                              setTimeout(() => {
+                                setModal(true);
+                              }, 200);
+                            }}
+                            type="button"
+                            class="font-medium text-blue-600 dark:text-blue-500 hover:underline flex flex-row items-center cursor-pointer gap-1"
+                          >
+                            <CgDetailsMore class="text-lg" /> Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  : empy?.map((emp) => (
+                      <tr
+                        key={emp.id}
+                        class="bg-white border-b dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                      >
+                        <th
+                          scope="row"
+                          class="flex items-center px-6 py-4 text-gray-900 whitespace-nowrap dark:text-white"
+                        >
+                          <img
+                            class="w-10 h-10 rounded-full bg-slate-900"
+                            src="/docs/images/people/profile-picture-1.jpg"
+                            alt=""
+                          />
+                          <div class="pl-3">
+                            <div class="text-base font-semibold">
+                              {emp?.nama}
+                            </div>
+                            <div class="font-normal text-gray-500">
+                              {emp?.jabatan.jabatan_pegawai}
+                            </div>
+                          </div>
+                        </th>
+                        <td class="px-6 py-4">{emp?.lama_kerja}</td>
+                        <td class="px-6 py-4">
+                          {emp?.status_pegawai === 'Aktif' ? (
+                            <div class="flex items-center">
+                              <div class="h-2.5 w-2.5 rounded-full bg-green-400 mr-2"></div>{' '}
+                              {emp?.status_pegawai}
+                            </div>
+                          ) : (
+                            <div class="flex items-center">
+                              <div class="h-2.5 w-2.5 rounded-full bg-red-400 mr-2"></div>{' '}
+                              {emp?.status_pegawai}
+                            </div>
+                          )}
+                        </td>
+                        <td class="px-6 py-4">
+                          <button
+                            onClick={() => {
+                              setId(emp?.id);
+                              setModal(true);
+                            }}
+                            type="button"
+                            class="font-medium text-blue-600 dark:text-blue-500 hover:underline flex flex-row items-center cursor-pointer gap-1"
+                          >
+                            <CgDetailsMore class="text-lg" /> Details
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+
+                {search && filter?.length === 0 && (
+                  <tr>
+                    <td colSpan="4" class="text-center py-4">
+                      <div class="flex flex-col items-center">
+                        <p class="text-gray-500">Data tidak ditemukan</p>
                       </div>
-                    </div>
-                  </th>
-                  <td class="px-6 py-4">React Developer</td>
-                  <td class="px-6 py-4">
-                    <div class="flex items-center">
-                      <div class="h-2.5 w-2.5 rounded-full bg-green-400 mr-2"></div>{' '}
-                      Online
-                    </div>
-                  </td>
-                  <td class="px-6 py-4">
-                    <button
-                      onClick={() => {
-                        setModal(true);
-                      }}
-                      type="button"
-                      class="font-medium text-blue-600 dark:text-blue-500 hover:underline flex flex-row items-center cursor-pointer gap-1"
-                    >
-                      <CgDetailsMore class="text-lg" /> Details
-                    </button>
-                  </td>
-                </tr>
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
